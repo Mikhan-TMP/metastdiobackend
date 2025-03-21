@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
@@ -26,7 +26,7 @@ export class AuthService {
     });
   }
 
-  async signup(email: string, password: string, username: string): Promise<{ token: string }> {
+  async signup(email: string, password: string, username: string): Promise<{ message: string ; status: string }> {
     // 1. Check if the user already exists
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
@@ -36,16 +36,27 @@ export class AuthService {
     if (existingUsername) {
       throw new ConflictException('Username already taken.');
     }
-    //2. Hash the Password. 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new this.userModel({ email, password: hashedPassword, username });
-    await user.save();
-    //3. Set the Token for login session
-    const jwtSecret = this.configService.get<string>('JWT_SECRET') || '';
-    
-    const token = jwt.sign({ userId: user._id }, jwtSecret, { expiresIn: '1d' });
 
-    return { token };
+    // 2. Hash the Password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // 3. Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    // 4. Create and save user
+    const user = new this.userModel({
+      email,
+      password: hashedPassword,
+      username,
+      isVerified: false,
+      emailVerificationToken: verificationToken
+    });
+    await user.save();
+
+    // 5. Send verification email
+    await this.sendVerificationEmail(email, verificationToken);
+
+    return { message: 'Registration successful. Please check your email to verify your account.', status: 'success' };
   }
 
   async login(identifier: string, password: string): Promise<{ token: string }> {
@@ -59,20 +70,24 @@ export class AuthService {
       throw new UnauthorizedException('User does not exist.');
     }
 
-    // 3. Compare the password the user gave to the one in the database
+    // 3. Check if email is verified
+    if (!user.isVerified) {
+      throw new UnauthorizedException('Please verify your email address before logging in. Check your email for the verification link.');
+    }
+
+    // 4. Compare the password the user gave to the one in the database
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
-    // 4. If the passwords don't match, throw an error 
+    // 5. If the passwords don't match, throw an error 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Incorrect Login Credentials.');
     }
 
-    // 5. Create a token that will be sent back to the user
+    // 6. Create a token that will be sent back to the user
     const jwtSecret = this.configService.get<string>('JWT_SECRET') || '';
-
     const token = jwt.sign({ userId: user._id }, jwtSecret, { expiresIn: '1d' });
 
-    // 6. Return the token
+    // 7. Return the token
     return { token };
   }
 
@@ -143,5 +158,53 @@ export class AuthService {
     await user.save();
 
     return { message: 'Password reset successful' };
+  }
+
+  async sendVerificationEmail(email: string, token: string) {
+    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/?token=${token}&email=${email}&isVerify=true`;
+    
+    const emailTemplate = `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <div style="text-align: center; padding: 20px;">
+          <img src="${this.configService.get<string>('FRONTEND_URL')}/public/metatown.png" alt="Metatown" style="width: 200px; margin-bottom: 20px;">
+        </div>
+        <h1 style="text-align: center; color: #BB30C9;">Verify Your Email</h1>
+        <p style="text-align: center;">Thank you for registering! Please click the link below to verify your email address:</p>
+        <div style="text-align: center; padding: 1rem;">
+          <a style="text-decoration: none; font-size: 1.5rem; background-color: #BB30C9; color: white; padding: 1rem 2rem; border-radius: 5px; display: inline-block;" href="${verificationUrl}">Verify Email</a>
+        </div>
+        <p style="text-align: center; color: #666;">If you didn't create an account, please ignore this email.</p>
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666;">
+          <small>&copy; ${new Date().getFullYear()} Metatown. All rights reserved.</small>
+        </div>
+      </div>
+    `;
+
+    await this.transporter.sendMail({
+      to: email,
+      subject: 'Verify Your Email Address',
+      html: emailTemplate,
+    });
+  }
+
+  async verifyEmailUser(email: string, token: string) {
+    const user = await this.userModel.findOne({ email });
+    // show the email and token in console
+    console.log('Email:', email);
+    console.log('Token: ', token);
+    if (!user || user.emailVerificationToken.trim() !== token.trim()) {
+      throw new UnauthorizedException('Invalid or expired verification token');
+    }
+  
+    if (user.isVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+  
+    // Clear the token and mark as verified
+    user.emailVerificationToken = '';
+    user.isVerified = true;
+    await user.save();
+  
+    return { message: 'Email verified successfully' };
   }
 }
