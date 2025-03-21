@@ -29,4 +29,5 @@ export class AuthController {
   {
     return this.authService.resetPassword(email, token, newPassword);
   }
+  
 }
