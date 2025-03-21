@@ -5,13 +5,26 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from '../models/user.model';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
+import * as nodemailer from 'nodemailer';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
+  private transporter: nodemailer.Transporter;
+
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private configService: ConfigService,
-  ) {}
+  ) {
+    // Initialize nodemailer transporter
+    this.transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: this.configService.get<string>('EMAIL_USER'),
+        pass: this.configService.get<string>('EMAIL_PASS'),
+      },
+    });
+  }
 
   async signup(email: string, password: string, username: string): Promise<{ token: string }> {
     // 1. Check if the user already exists
@@ -61,5 +74,74 @@ export class AuthService {
 
     // 6. Return the token
     return { token };
+  }
+
+  async sendPasswordResetEmail(email: string) {
+    // 1. Find user
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // 2. Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiration = new Date();
+    tokenExpiration.setHours(tokenExpiration.getHours() + 1); // Token expires in 1 hour
+
+    // 3. Save token to user
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = tokenExpiration;
+    await user.save();
+
+    // 4. Send email
+    const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/?token=${resetToken}&email=${email}&isReset=true`;
+    
+    const emailTemplate = `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <div style="text-align: center; padding: 20px;">
+          <img src="${this.configService.get<string>('FRONTEND_URL')}/metatown.png" alt="Metatown" style="width: 200px; margin-bottom: 20px;">
+        </div>
+        <h1 style="text-align: center; color: #BB30C9;">Password Reset</h1>
+        <p style="text-align: center;">You requested a password reset. Click the link below to reset your password:</p>
+        <div style="text-align: center; padding: 1rem;">
+          <a style="text-decoration: none; font-size: 1.5rem; background-color: #BB30C9; color: white; padding: 1rem 2rem; border-radius: 5px; display: inline-block;" href="${resetUrl}">Reset Password</a>
+        </div>
+        <p style="text-align: center; color: #666;">This link will expire in 1 hour.</p>
+        <p style="text-align: center; color: #666;">If you didn't request this, please ignore this email.</p>
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666;">
+          <small>&copy; ${new Date().getFullYear()} Metatown. All rights reserved.</small>
+        </div>
+      </div>
+    `;
+
+    await this.transporter.sendMail({
+      to: email,
+      subject: 'Password Reset Request',
+      html: emailTemplate,
+    });
+
+    return { message: 'Password reset email sent successfully' };
+  }
+
+  async resetPassword(email: string, token: string, newPassword: string) {
+    // 1. Find user and verify token
+    const user = await this.userModel.findOne({
+      email,
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    // 2. Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return { message: 'Password reset successful' };
   }
 }

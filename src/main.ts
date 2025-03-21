@@ -13,7 +13,7 @@ async function bootstrap() {
     credentials: true, // Allow cookies
   });
 
-  await app.listen(4000);
-  console.log(`🚀 Backend running on http://localhost:4000`);
+  await app.listen(3001, '192.168.1.141');
+  console.log(`🚀 Backend running on 192.168.1.141:3001`);
 }
 bootstrap();
