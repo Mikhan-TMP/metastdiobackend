@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { AvatarGen, AvatarGenDocument } from '../models/avatargen.model';
 
 @Injectable()
@@ -12,39 +12,93 @@ export class AvatarGenService {
     ) {}
 
     // SAVE THE GENERATED IMG TO THE DATABASE
-    async generate(email: string, imgSrc: Buffer, style: string) {
+    async generate(email: string, imgSrc: Buffer, style: string, name: string) {
         if (!email) {
-            return "Invalid email. Please Sign up first.";
+            return { message: "Invalid email. Please Sign up first.", status: "error" };
         }
         if (!imgSrc || !(imgSrc instanceof Buffer)) {
-            return "Invalid imgSrc. Expected a binary buffer.";
+            return { message: "Invalid imgSrc. Expected a binary buffer.", status: "error" };
         }
         if (!style) {
-            return "Invalid style. Please specify a style.";
+            return { message: "Invalid style. Please specify a style.", status: "error" };
         }
+
         const base64Img = imgSrc.toString('base64');
     
         return await this.avatarGenModel.findOneAndUpdate(
             { email }, 
-            { $push: { images: { imgSrc: base64Img, style } } },
-            { new: true, upsert: true } 
+            { $push: { avatars: { name, imgSrc: base64Img, style } } }, 
+            { new: true, upsert: true }
         );
+        
     }
-    // FETCH ALL THE AVATARS
-    async getAvatars(email: string) {
-        if (!email) {
-            return "Invalid email. Please provide a valid email.";
+
+    async getAvatars(email: string, style?: string, name?: string) {
+        const query: any = { email };
+    
+        if (style || name) {
+            query.avatars = { $elemMatch: {} };
+    
+            if (style) {
+                query.avatars.$elemMatch.style = style.trim();
+            }
+    
+            if (name) {
+                query.avatars.$elemMatch.name = { $regex: name.trim(), $options: "i" }; // Case-insensitive search
+            }
         }
     
-        const avatarRecord = await this.avatarGenModel.findOne({ email }).exec();
-        if (!avatarRecord) {
-            return { message: "No avatars found for this email." };
+        const avatarRecords = await this.avatarGenModel.find(query).exec();
+        
+        if (!avatarRecords.length) {
+            return { status: "error", message: "No avatars found for this email with the specified filters." };
         }
     
-        return avatarRecord.imgSrc;
+        // Extract and return only matching images
+        const avatars = avatarRecords.flatMap(record => 
+            record.avatars.filter(img => 
+                (!style || img.style === style.trim()) && 
+                (!name || new RegExp(name.trim(), "i").test(img.name)) // Case-insensitive check
+            )
+        );
+    
+        return avatars.map(img => ({
+            imgSrc: img.imgSrc,
+            style: img.style,
+            name: img.name,
+            id: img._id
+        }));
     }
 
 
+
+    async deleteAvatar(email: string, id: string) {
+        if (!email || !id) {
+            return { status: "error", message: "Email and avatar ID are required to delete an avatar." };
+        }
     
+        // Convert id to ObjectId
+        const objectId = new Types.ObjectId(id);
+    
+        const result = await this.avatarGenModel.findOneAndUpdate(
+            { email, "avatars._id": objectId }, // Find the document where the avatar exists
+            { $pull: { avatars: { _id: objectId } } }, // Remove the specific avatar
+            { new: true }
+        );
+    
+        if (!result) {
+            return { status: "error", message: "No matching avatar found to delete." };
+        }
+    
+        // Check if the avatar still exists
+        const deleted = !result.avatars.some(avatar => avatar._id.toString() === id);
+        if (!deleted) {
+            return { status: "error", message: "No matching avatar found to delete." };
+        }
+    
+        return { status: "success", message: "Avatar deleted successfully.", avatars: result.avatars };
+    }
+    
+
 }
 
