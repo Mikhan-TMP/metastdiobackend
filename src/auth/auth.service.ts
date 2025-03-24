@@ -59,7 +59,7 @@ export class AuthService {
     return { message: 'Registration successful. Please check your email to verify your account.', status: 'success' };
   }
 
-  async login(identifier: string, password: string): Promise<{ token: string }> {
+  async login(identifier: string, password: string): Promise<{ token: string, user: { email: string, username: string } }> {
     // 1. Find the user in the database by email or username
     const user = await this.userModel.findOne({
       $or: [{ email: identifier }, { username: identifier }]
@@ -88,7 +88,10 @@ export class AuthService {
     const token = jwt.sign({ userId: user._id }, jwtSecret, { expiresIn: '1d' });
 
     // 7. Return the token
-    return { token };
+    return { 
+      token,
+      user: { email: user.email, username: user.username } 
+    };
   }
 
   async sendPasswordResetEmail(email: string) {

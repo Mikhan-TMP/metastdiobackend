@@ -11,17 +11,40 @@ export class AvatarGenService {
         private configService: ConfigService,
     ) {}
 
-    async generate(email: string, imgSrc: Buffer) {
+    // SAVE THE GENERATED IMG TO THE DATABASE
+    async generate(email: string, imgSrc: Buffer, style: string) {
         if (!email) {
             return "Invalid email. Please Sign up first.";
         }
         if (!imgSrc || !(imgSrc instanceof Buffer)) {
             return "Invalid imgSrc. Expected a binary buffer.";
         }
+        if (!style) {
+            return "Invalid style. Please specify a style.";
+        }
         const base64Img = imgSrc.toString('base64');
-
-        const avatarGen = new this.avatarGenModel({ email, imgSrc: base64Img });
-        return avatarGen.save();
+    
+        return await this.avatarGenModel.findOneAndUpdate(
+            { email }, 
+            { $push: { images: { imgSrc: base64Img, style } } },
+            { new: true, upsert: true } 
+        );
     }
+    // FETCH ALL THE AVATARS
+    async getAvatars(email: string) {
+        if (!email) {
+            return "Invalid email. Please provide a valid email.";
+        }
+    
+        const avatarRecord = await this.avatarGenModel.findOne({ email }).exec();
+        if (!avatarRecord) {
+            return { message: "No avatars found for this email." };
+        }
+    
+        return avatarRecord.imgSrc;
+    }
+
+
+    
 }
 

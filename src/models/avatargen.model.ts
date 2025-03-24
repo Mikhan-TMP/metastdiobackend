@@ -8,8 +8,8 @@ export class AvatarGen {
     @Prop({ required: true, unique: true })
     email: string;
 
-    @Prop({ required: true })
-    imgSrc: string;  
+    @Prop({ type: [{ imgSrc: String, style: String }], default: [] }) // Store images with styles
+    imgSrc: { imgSrc: string; style: string }[]; 
 }
 
 export const AvatarGenSchema = SchemaFactory.createForClass(AvatarGen);
