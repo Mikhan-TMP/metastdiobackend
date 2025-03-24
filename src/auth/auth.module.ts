@@ -8,8 +8,8 @@ import { ConfigModule } from '@nestjs/config';
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     ConfigModule.forRoot(),
-    MongooseModule.forRoot(process.env.MONGO_URI || ''),
-    AuthModule,
+    // MongooseModule.forRoot(process.env.MONGO_URI || ''),
+    // AuthModule,
   ],
 
   controllers: [AuthController],
