@@ -70,8 +70,6 @@ export class AvatarGenService {
         }));
     }
 
-
-
     async deleteAvatar(email: string, id: string) {
         if (!email || !id) {
             return { status: "error", message: "Email and avatar ID are required to delete an avatar." };
@@ -103,8 +101,6 @@ export class AvatarGenService {
         if (!email || !id || !name) {
             return { status: "error", message: "Email, avatar ID, and new name are required to update an avatar." };
         }
-
-        console.log(id);
     
         // Validate if `id` is a valid ObjectId
         if (!Types.ObjectId.isValid(id)) {
