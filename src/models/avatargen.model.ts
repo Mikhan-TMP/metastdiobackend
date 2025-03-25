@@ -15,9 +15,11 @@ export class AvatarGen {
     avatars: {
         _id: any; name: string; imgSrc: string; style: string 
     }[]; 
-
     @Prop({ required: true })
     style: string;
+    
+    @Prop({ required: true })
+    id: string;
 }
 
 export const AvatarGenSchema = SchemaFactory.createForClass(AvatarGen);

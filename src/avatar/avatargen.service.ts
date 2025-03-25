@@ -96,7 +96,35 @@ export class AvatarGenService {
             return { status: "error", message: "No matching avatar found to delete." };
         }
     
-        return { status: "success", message: "Avatar deleted successfully.", avatars: result.avatars };
+        return { status: "success", message: "Avatar deleted successfully." };
+    }
+
+    async updateAvatar(id: string, email: string, name: string) {
+        if (!email || !id || !name) {
+            return { status: "error", message: "Email, avatar ID, and new name are required to update an avatar." };
+        }
+
+        console.log(id);
+    
+        // Validate if `id` is a valid ObjectId
+        if (!Types.ObjectId.isValid(id)) {
+            return { status: "error", message: "Invalid avatar ID format." };
+        }
+    
+        // Convert id to ObjectId
+        const objectId = new Types.ObjectId(id);
+    
+        const result = await this.avatarGenModel.findOneAndUpdate(
+            { email, "avatars._id": objectId }, 
+            { $set: { "avatars.$.name": name } }, 
+            { new: true }
+        );
+    
+        if (!result) {
+            return { status: "error", message: "No matching avatar found to update." };
+        }
+    
+        return { status: "success", message: "Avatar name updated successfully." };
     }
     
 

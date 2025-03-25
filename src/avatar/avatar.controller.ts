@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Delete} from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Delete, Patch, Param} from '@nestjs/common';
 import { AvatarGenService } from './avatargen.service';
 import { Buffer } from 'buffer';
 
@@ -33,5 +33,14 @@ export class AvatarController {
         @Query('id') id: string
     ) {
         return await this.avatarGenService.deleteAvatar(email, id);
+    }
+
+    @Patch('updateAvatar')
+    async updateAvatar(
+      @Query('id') id: string,
+      @Query('email') email: string,
+      @Query('name') name: string 
+    ) {
+      return this.avatarGenService.updateAvatar(id, email, name);
     }
 }
