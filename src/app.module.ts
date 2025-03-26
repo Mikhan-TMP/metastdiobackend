@@ -5,6 +5,9 @@ import { AuthModule } from './auth/auth.module';
 import { AvatarModule } from './avatar/avatar.module';
 import { AvatarController } from './avatar/avatar.controller';
 import { StudioModule } from './studio/studio.module';
+import { AudioController } from './audio/audio.controller';
+import { AudioModule } from './audio/audio.module';
+import { StudioController } from './studio/studio.controller';
 
 @Module({
   imports: [
@@ -13,7 +16,8 @@ import { StudioModule } from './studio/studio.module';
     AuthModule,
     AvatarModule,
     StudioModule,
+    AudioModule,
   ],
-  controllers: [AvatarController],
+  controllers: [AvatarController, AudioController, StudioController, AudioController],
 })
 export class AppModule {}

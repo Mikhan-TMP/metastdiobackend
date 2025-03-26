@@ -73,7 +73,7 @@ export class StudioService {
             id: img._id
         }));
     }
-
+    
     async deleteStudio(email: string, id: string) {
         if (!email || !id) {
             return { status: "error", message: "Email and studio ID are required to delete a Studio." };
