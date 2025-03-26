@@ -39,12 +39,26 @@ export class Audio {
 export const AudioSchema = SchemaFactory.createForClass(Audio);
 
 @Schema()
+export class AudioTitle {
+  @Prop({ type: Types.ObjectId, auto: true }) 
+  _id: Types.ObjectId;
+
+  @Prop({ required: true })
+  title: string;
+
+  @Prop({ type: [Audio], default: [] })
+  audios: Audio[];
+}
+
+export const AudioTitleSchema = SchemaFactory.createForClass(AudioTitle);
+
+@Schema()
 export class UserAudio extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ type: Object, default: {} }) // Use an object instead of Map
-  audios: Record<string, Audio[]>;
+  @Prop({ type: [AudioTitle], default: [] })  // Change to an array
+  audios: AudioTitle[];
 }
 
 export const UserAudioSchema = SchemaFactory.createForClass(UserAudio);

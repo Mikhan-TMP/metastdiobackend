@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { AudioService } from './audio.service';
 import { Audio } from '../models/audio.model';
 
@@ -11,5 +11,9 @@ export class AudioController {
     const { email, title, audio } = body;
     return this.audioService.addAudio(email, title, audio);
   }
-  
+
+  @Get('getAllScript')
+  async getAllScript(@Query('email') email: string) {
+    return this.audioService.getAllScript(email);
+  }
 }
