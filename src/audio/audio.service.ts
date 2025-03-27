@@ -24,7 +24,7 @@ export class AudioService {
         titleEntry = {
             _id: new Types.ObjectId(),
             title,
-            audios: [],
+            audios: []
         };
 
         user.audios.push(titleEntry);
@@ -35,10 +35,14 @@ export class AudioService {
 
     if (titleEntry) {
         // Append new audio data
-        titleEntry.audios.push(...audioDataArray);
+      const newAudios = audioDataArray.map(audio => ({
+        ...audio,
+        _id: new Types.ObjectId() // Ensure unique ObjectId for each audio
+      }));
+
+      titleEntry.audios.push(...newAudios);
     }
 
-    // Mark `audios` as modified
     user.markModified('audios');
 
     return user.save();
@@ -54,4 +58,195 @@ export class AudioService {
       titles: result ? result.audios.map(title => ({ id: title._id.toString(), title: title.title })) : []
     };
   }
+
+  async getScript(email: string, titleId: string): Promise<{ status: string; message: string; audios: Audio[] }> {
+    const result = await this.userAudioModel.findOne({ email });
+  
+    if (!result) {
+      return {
+        status: 'error',
+        message: 'No audio list found for this email',
+        audios: []
+      };
+    }
+  
+    const titleEntry = result.audios.find(title => title._id.toString() === titleId);
+  
+    if (!titleEntry) {
+      return {
+        status: 'error',
+        message: 'No audio entry found with the given title ID',
+        audios: []
+      };
+    }
+  
+    return {
+      status: 'success',
+      message: 'Audio list retrieved successfully',
+      audios: titleEntry.audios
+    };
+  }
+  
+  //update audio
+  async updateAudio(email: string, titleId: string, audioId: string, updateData: Partial<Audio>): Promise<{ status: string; message: string }> {
+    const user = await this.userAudioModel.findOne({ email });
+    if (!user) {
+      return {
+        status: 'error',
+        message: 'Invalid Email. Please try again.',
+      };
+    }
+  
+    const titleEntry = user.audios.find(title => title._id.toString() === titleId);
+    if (!titleEntry) {
+      return {
+        status: 'error',
+        message: 'Invalid titleId. Please try again.',
+      };
+    }
+  
+    const audioEntry = titleEntry.audios.find(audio => audio._id.toString() === audioId);
+    if (!audioEntry) {
+      return {
+        status: 'error',
+        message: 'Invalid audioId. Please try again.',
+      };
+    }
+  
+    // Track if changes are made
+    let isUpdated = false;
+  
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined && (audioEntry as any)[key] !== updateData[key]) {
+        (audioEntry as any)[key] = updateData[key];
+        isUpdated = true;
+      }
+    });
+  
+    if (!isUpdated) {
+      return {
+        status: 'info',
+        message: 'No changes made to the audio.',
+      };
+    }
+  
+    user.markModified('audios');
+    await user.save();
+  
+    return {
+      status: 'success',
+      message: 'Audio updated successfully'
+    };
+  }
+
+  
+  async updateTitle(email: string, titleId: string, newTitle: string): Promise<{ status: string; message: string }> {
+    const user = await this.userAudioModel.findOne({ email });
+  
+    if (!user) {
+      return {
+        status: 'error',
+        message: 'No user found with this email.',
+      };
+    }
+  
+    const titleEntry = user.audios.find(title => title._id.toString() === titleId);
+    if (!titleEntry) {
+      return {
+        status: 'error',
+        message: 'Invalid titleId. Please try again.',
+      };
+    }
+  
+    // Check if the title is actually changing
+    if (titleEntry.title === newTitle) {
+      return {
+        status: 'error',
+        message: 'No changes made. The title is already the same.',
+      };
+    }
+  
+    // Update the title
+    titleEntry.title = newTitle;
+  
+    user.markModified('audios'); // Ensure MongoDB detects the change
+    await user.save();
+  
+    return {
+      status: 'success',
+      message: 'Script title updated successfully',
+    };
+  }
+
+
+  async deleteAudio(email: string, titleId: string, audioId: string): Promise<{ status: string; message: string }> {
+    const user = await this.userAudioModel.findOne({ email });
+  
+    if (!user) {
+      return {
+        status: 'error',
+        message: 'No user found with this email.',
+      };
+    }
+  
+    const titleEntry = user.audios.find(title => title._id.toString() === titleId);
+    if (!titleEntry) {
+      return {
+        status: 'error',
+        message: 'Invalid titleId. Please try again.',
+      };
+    }
+  
+    const audioEntry = titleEntry.audios.find(audio => audio._id.toString() === audioId);
+    if (!audioEntry) {
+      return {
+        status: 'error',
+        message: 'Invalid audioId. Please try again.',
+      };
+    }
+  
+    // Remove the audio entry
+    titleEntry.audios = titleEntry.audios.filter(audio => audio._id.toString() !== audioId);
+  
+    user.markModified('audios'); // Ensure MongoDB detects the change
+    await user.save();
+  
+    return {
+      status: 'success',
+      message: 'Audio deleted successfully',
+    }
+      
+  }
+
+  async deleteScript(email: string, titleId: string): Promise<{ status: string; message: string }> {
+    const user = await this.userAudioModel.findOne({ email });
+  
+    if (!user) {
+      return {
+        status: 'error',
+        message: 'No user found with this email.',
+      };
+    }
+  
+    const titleEntry = user.audios.find(title => title._id.toString() === titleId);
+    if (!titleEntry) {
+      return {
+        status: 'error',
+        message: 'Invalid titleId. Please try again.',
+      };
+    }
+  
+    // Remove the title entry
+    user.audios = user.audios.filter(title => title._id.toString() !== titleId);
+  
+    user.markModified('audios'); // Ensure MongoDB detects the change
+    await user.save();
+  
+    return {
+      status: 'success',
+      message: 'Script deleted successfully',
+    }
+  }
+  
+  
 }
