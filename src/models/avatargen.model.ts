@@ -19,7 +19,8 @@ export class AvatarGen {
     style: string;
     
     @Prop({ required: true })
-    id: string;
+    id: string; avatarID: string
+
 }
 
 export const AvatarGenSchema = SchemaFactory.createForClass(AvatarGen);

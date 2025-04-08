@@ -7,9 +7,9 @@ export class AudioController {
   constructor(private readonly audioService: AudioService) {}
 
   @Post('addAudio')
-  async addAudio(@Body() body: { email: string; title: string; audio: Audio[] }) {
-    const { email, title, audio } = body;
-    return this.audioService.addAudio(email, title, audio);
+  async addAudio(@Body() body: {titleId?: string;  email: string; title: string; audio: Audio[] }) {
+    const {titleId, email, title, audio } = body;
+    return this.audioService.addAudio(email, title, audio, titleId,);
   }
 
   @Get('getAllScript')

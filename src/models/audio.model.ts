@@ -43,6 +43,7 @@ export class Audio {
 
   @Schema()
   export class AudioTitle {
+    [x: string]: any;
     @Prop({ type: Types.ObjectId, auto: true }) 
     _id: Types.ObjectId;
 
@@ -57,6 +58,9 @@ export class Audio {
 
   @Schema()
   export class UserAudio extends Document {
+    @Prop({ required: false })
+    titleId: string;
+
     @Prop({ required: true, unique: true })
     email: string;
 

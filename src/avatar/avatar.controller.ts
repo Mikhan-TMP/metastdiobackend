@@ -6,9 +6,8 @@ import { Buffer } from 'buffer';
 export class AvatarController {
     constructor(private readonly avatarGenService: AvatarGenService) {}
 
-    @Post('generate')
-
-    async generate(
+    @Post('addAvatar')
+    async addAvatar(
         @Body('name') name: string, 
         @Body('email') email: string,
         @Body('image') imgSrc: string,
@@ -19,7 +18,7 @@ export class AvatarController {
         }
         const imageBuffer = Buffer.from(imgSrc, 'base64');
 
-        return await this.avatarGenService.generate(email, imageBuffer, style, name);
+        return await this.avatarGenService.addAvatar(email, imageBuffer, style, name);
     }
 
     @Get('getAvatars')
