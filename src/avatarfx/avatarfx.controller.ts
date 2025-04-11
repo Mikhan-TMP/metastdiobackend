@@ -13,4 +13,8 @@ export class AvatarfxController {
       avatarfx.cameraViews,
     );
   }
+  @Get('getAvatarBaseCameraViews')
+  async getAvatarCameraViews(@Query('email') email: string, @Query('avatarID') avatarID: string) {
+    return this.avatarfxService.getBaseCameraViews(email, avatarID);
+  }
 }

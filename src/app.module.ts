@@ -10,11 +10,12 @@ import { AudioModule } from './audio/audio.module';
 import { StudioController } from './studio/studio.controller';
 import { AvatarfxModule } from './avatarfx/avatarfx.module';
 import { AvatarfxController } from './avatarfx/avatarfx.controller';
-import { GesturesService } from './gestures/gestures.service';
 import { GesturesModule } from './gestures/gestures.module';
 import { GesturesController } from './gestures/gestures.controller';
-import { EmotionsService } from './emotions/emotions.service';
 import { EmotionsModule } from './emotions/emotions.module';
+import { AvatarEffectsController } from './avatar-effects/avatar-effects.controller';
+import { AvatarEffectsModule } from './avatar-effects/avatar-effects.module';
+import { SequencesModule } from './sequences/sequences.module';
 
 @Module({
   imports: [
@@ -27,7 +28,9 @@ import { EmotionsModule } from './emotions/emotions.module';
     AvatarfxModule,
     GesturesModule,
     EmotionsModule,
+    AvatarEffectsModule,
+    SequencesModule,
   ],
-  controllers: [AvatarController, AudioController, StudioController, AudioController, AvatarfxController, GesturesController],
+  controllers: [AvatarController, AudioController, StudioController, AudioController, AvatarfxController, GesturesController, AvatarEffectsController],
 })
 export class AppModule {}

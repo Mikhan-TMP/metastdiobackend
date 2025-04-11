@@ -53,11 +53,11 @@ class Avatar {
   @Prop({ type: () => CameraView })
   close_up: CameraView;
 
-  @Prop({ type: [Gestures] })
-  gestures: Gestures[];
+  // @Prop({ type: [Gestures] })
+  // gestures: Gestures[];
 
-  @Prop({ type: [Emotions] })
-  emotions: Emotions[];
+  // @Prop({ type: [Emotions] })
+  // emotions: Emotions[];
 }
 
 @Schema()

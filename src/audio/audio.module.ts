@@ -9,7 +9,7 @@ import { Audio, AudioSchema, UserAudio, UserAudioSchema } from '../models/audio.
     imports: [
         MongooseModule.forFeature([
             { name: Audio.name, schema: AudioSchema },
-            { name: UserAudio.name, schema: UserAudioSchema } // Ensure UserAudio is registered
+            { name: UserAudio.name, schema: UserAudioSchema } 
         ]),
         ConfigModule.forRoot(),
     ],
