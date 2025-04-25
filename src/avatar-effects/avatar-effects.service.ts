@@ -47,7 +47,6 @@ constructor(
                         await fs.writeFile(filepath, file.buffer);
                         processed[field] = fileURL; // Save the URL for the file
 
-                        // processed[field] = filepath; // Save the file path
                     }
                 }
 
@@ -61,17 +60,56 @@ constructor(
         const gestures = await processCategory('gestures', gesturesPayload);
         const emotions = await processCategory('emotions', emotionsPayload);
 
-        // Create and save the new entry to the database
-        const newEntry = new this.avatarEffectsModel({
-            
+        // Find existing entry
+        const existingEntry = await this.avatarEffectsModel.findOne({
             email: body.email,
             name: body.name,
-            avatarId: body.avatarId,
-            Gestures: gestures,
-            Emotions: emotions,
+            avatarId: body.avatarId
         });
 
-        return newEntry.save();
+        if (existingEntry) {
+            // Update existing gestures and emotions
+            for (const gesture of gestures) {
+                const existingGestureIndex = existingEntry.Gestures.findIndex(g => g.name === gesture.name);
+                if (existingGestureIndex >= 0) {
+                    // Update existing gesture
+                    existingEntry.Gestures[existingGestureIndex] = {
+                        ...existingEntry.Gestures[existingGestureIndex],
+                        ...gesture
+                    };
+                } else {
+                    // Add new gesture
+                    existingEntry.Gestures.push(gesture);
+                }
+            }
+
+            for (const emotion of emotions) {
+                const existingEmotionIndex = existingEntry.Emotions.findIndex(e => e.name === emotion.name);
+                if (existingEmotionIndex >= 0) {
+                    // Update existing emotion
+                    existingEntry.Emotions[existingEmotionIndex] = {
+                        ...existingEntry.Emotions[existingEmotionIndex],
+                        ...emotion
+                    };
+                } else {
+                    // Add new emotion
+                    existingEntry.Emotions.push(emotion);
+                }
+            }
+
+            return existingEntry.save();
+        } else {
+            // Create new entry if none exists
+            const newEntry = new this.avatarEffectsModel({
+                email: body.email,
+                name: body.name,
+                avatarId: body.avatarId,
+                Gestures: gestures,
+                Emotions: emotions,
+            });
+
+            return newEntry.save();
+        }
     }
 
     async getAllEffects(email: string, avatarId: string): Promise<AvatarEffects[]> {
