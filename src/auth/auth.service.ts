@@ -164,7 +164,7 @@ export class AuthService {
   }
 
   async sendVerificationEmail(email: string, token: string) {
-    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/?token=${token}&email=${email}&isVerify=true`;
+    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/Auth/?token=${token}&email=${email}&isVerify=true`;
     
     const emailTemplate = `
       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
