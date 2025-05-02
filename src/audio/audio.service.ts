@@ -158,16 +158,32 @@
     if (updateData.name && updateData.name !== audioEntry.name) {
         const folderName = email.replace(/[^a-zA-Z0-9]/g, "_"); // Generate folder name from email
         const audioBaseFolder = process.env.AUDIOS_FOLDER;
-        const oldFilePath = path.join(audioBaseFolder, folderName, titleEntry.title, `${audioEntry.name}.wav`); // Old file path
-        const newFilePath = path.join(audioBaseFolder, folderName, titleEntry.title, `${updateData.name}.wav`); // New file path
+            // Fix: Remove the extra .wav extension
+        const oldName = audioEntry.name.endsWith('.wav') 
+                ? audioEntry.name 
+                : `${audioEntry.name}.wav`;
+        const newName = updateData.name.endsWith('.wav') 
+                ? updateData.name 
+                : `${updateData.name}.wav`;
+        const oldFilePath = path.join(audioBaseFolder, folderName, titleEntry.title, oldName);
+        const newFilePath = path.join(audioBaseFolder, folderName, titleEntry.title, newName);
+            
+        // const oldFilePath = path.join(audioBaseFolder, folderName, titleEntry.title, `${audioEntry.name}.wav`); // Old file path
+        // const newFilePath = path.join(audioBaseFolder, folderName, titleEntry.title, `${updateData.name}.wav`); // New file path
 
         try {
             // Check if the old file exists
             if (fs.existsSync(oldFilePath)) {
-                // Rename the file in the filesystem
-                fs.renameSync(oldFilePath, newFilePath); // Rename the file
-                // Update audioSrc in the database to reflect the new filename
-                audioEntry.audioSrc = audioEntry.audioSrc.replace(audioEntry.name, updateData.name);
+                fs.renameSync(oldFilePath, newFilePath);
+                // Update audioSrc with .wav extension
+                const oldNameForPath = audioEntry.name.endsWith('.wav') 
+                    ? audioEntry.name 
+                    : `${audioEntry.name}.wav`;
+                const newNameForPath = updateData.name.endsWith('.wav') 
+                    ? updateData.name 
+                    : `${updateData.name}.wav`;
+                audioEntry.audioSrc = audioEntry.audioSrc.replace(oldNameForPath, newNameForPath);
+                audioEntry.name = newName; // Update the name with .wav extension
             } else {
                 console.error("Audio file does not exist:", oldFilePath);
                 return {
@@ -348,7 +364,6 @@
     }
     }
 
-
     async deleteScript(email: string, titleId: string): Promise<{ status: string; message: string }> {
     const fs = require('fs');
     const path = require('path');
@@ -401,6 +416,4 @@
     }
     }
 
-
-
-    }
+}

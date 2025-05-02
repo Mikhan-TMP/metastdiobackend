@@ -1,5 +1,5 @@
 // sequences.controller.ts
-import { Body, Controller, Get, Param, Post, Query} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Delete} from '@nestjs/common';
 import { SequencesService } from './sequences.service';
 import { Sequences } from '../models/sequences.model';
 
@@ -14,5 +14,13 @@ export class SequencesController {
     @Get('getAllSequences')
     async getAllSequences(@Query('email') email: string, @Query('avatarID') avatarID: string): Promise<Sequences[]> {
         return this.sequencesService.getAllSequences(email, avatarID);
+    }
+    @Delete('deleteSequence')
+    async deleteSequence(
+        @Query('email') email: string,
+        @Query('avatarID') avatarID: string,
+        @Query('sequenceID') sequenceID: string
+    ): Promise<Sequences[]>{
+        return this.sequencesService.deleteSequence(email, avatarID, sequenceID);
     }
 }
