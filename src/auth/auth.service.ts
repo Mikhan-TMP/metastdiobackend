@@ -210,4 +210,37 @@ export class AuthService {
   
     return { message: 'Email verified successfully' };
   }
+
+  async verifyAdmin(email: string){
+    console.log('Verifying admin for email:', email);
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
+      return {
+        message: 'User not found',
+        status: 'error'
+      }
+    }
+    if (user.isAdmin != true) {
+      console.log('User is not an admin:', user.isAdmin);
+      return{
+        message: 'User is not an admin',
+        status: 'error'
+      }
+    }
+    if (!user.isVerified) {
+      return {
+        message: 'User is not verified',
+        status: 'error'
+      }
+    }
+
+    if (user.isAdmin && user.isVerified) {
+      console.log('User is an admin:', user.isAdmin);
+      return {
+        message: 'User is an admin',
+        status: 200
+      }
+    }
+    
+  }
 }

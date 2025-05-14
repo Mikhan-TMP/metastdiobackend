@@ -38,6 +38,12 @@ export class AuthController {
     return this.authService.verifyEmailUser(email, token);
   }
 
+  @Post('verify-admin')
+  async verifyAdmin(@Body('email') email: string) {
+    return this.authService.verifyAdmin(email);
+  }
+
+
   // @Get('verify-email')
   // async verifyEmail(@Query('token') token: string, @Query('email') email: string) {
   //   return this.authService.verifyEmail(token, email);

@@ -12,10 +12,6 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-
-
-
-  // Increase request body size limit
   app.use(bodyParser.json({ limit: '10mb' })); 
   app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
@@ -29,9 +25,8 @@ async function bootstrap() {
   app.use('/shared', express.static(sharedFolderPath));
 
   
-  await app.listen(3001, '192.168.1.141');
-  console.log(`🚀 Backend running on 192.168.1.141:3001`);
-
+  await app.listen(3001, '192.168.1.48');
+  console.log(`🚀 Backend running on 192.168.1.48:3001`);
 
 }
 bootstrap();
